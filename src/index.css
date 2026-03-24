@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pretendard: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --color-primary: #7AB51D;
+  --color-primary-dark: #6A9E18;
+  --color-primary-light: #F0F7E6;
+  --color-adopted: #22C55E;
+  --color-rejected: #EF4444;
+  --color-recheck: #EAB308;
+  --color-pending: #6B7280;
+  --color-slate-dark: #1A1A1A;
+}
+
+* {
+  font-family: var(--font-pretendard);
+}
+
+body {
+  margin: 0;
+  background: #F5F5F0;
+  color: #1A1A1A;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
