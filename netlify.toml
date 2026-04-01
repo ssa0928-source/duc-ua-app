@@ -1,9 +1,7 @@
-# 정적 HTML 배포
 [build]
-  command = "mkdir -p dist_out && cp -r dist/* dist_out/"
-  publish = "dist_out"
+  command = "echo 'no build needed'"
+  publish = "dist"
 
-# SPA 라우팅
 [[redirects]]
   from = "/*"
   to = "/index.html"
