@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUC UA TF — 가설 관리 시스템</title>
+<link rel="icon" type="image/svg+xml" href="design/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+<style>
+  /* 브랜드: design/tokens.json 과 동기 */
+  :root {
+    --green: #7AB51D;
+    --green-dark: #5E8F14;
+    --green-light: #F0F7E0;
+    --neutral-900: #1C1D22;
+    --neutral-700: #3f4049;
+    --neutral-500: #71717a;
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #e4e4e7;
+    --surface-main: #f4f5f7;
+    --metrix-secondary: #FFCC91;
+    --metrix-go: #519C66;
+    --metrix-stop: #CC5F5F;
+  }
+  * { box-sizing: border-box; }
+  html, body, button, input, select, textarea { font-family: 'Noto Sans', 'Noto Sans KR', sans-serif; }
+  body { background: var(--surface-main); margin: 0; color: var(--neutral-900); }
+  .app-layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    width: 240px;
+    min-height: 100vh;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+  }
+  .brand-block { padding: 20px 16px 16px; border-bottom: 1px solid var(--sidebar-border); }
+  .brand-block img { display: block; width: 40px; height: 40px; border-radius: 10px; }
+  .brand-block .brand-text { margin-top: 10px; font-size: 11px; font-weight: 800; color: var(--neutral-900); letter-spacing: 0.02em; line-height: 1.35; }
+  .brand-block .brand-sub { font-size: 10px; font-weight: 600; color: var(--neutral-500); margin-top: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px 11px 16px; margin: 2px 10px;
+    border-radius: 8px; cursor: pointer; color: var(--neutral-700);
+    font-size: 13px; border-left: 3px solid transparent;
+  }
+  .nav-item svg { flex-shrink: 0; opacity: 0.85; }
+  .nav-item.active {
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-weight: 600;
+    border-left-color: var(--green);
+  }
+  .nav-item:hover:not(.active) { background: #f4f4f5; color: var(--neutral-900); }
+  .sidebar-footer-link {
+    display: block; background: var(--green-light); border: 1px solid #c5e1a5; border-radius: 8px;
+    padding: 10px 12px; font-size: 11px; color: var(--green-dark); font-weight: 600; text-align: center; text-decoration: none;
+  }
+  .sidebar-footer-link:hover { background: #e8f5d0; }
+  .main-area { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .top-bar {
+    background: #fff;
+    border-bottom: 1px solid #e4e4e7;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .top-bar h1 { font-size: 18px; font-weight: 800; color: var(--neutral-900); margin: 0; }
+  .top-bar p { font-size: 12px; color: var(--neutral-500); margin: 4px 0 0; }
+  .main-scroll { flex: 1; padding: 0 28px 60px; min-width: 0; }
+  .view-page { display: none; }
+  .view-page.is-active { display: block; }
+
+  /* 인사이트 대시보드 */
+  .dash-section-title { font-size: 12px; font-weight: 800; color: var(--neutral-500); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .goal-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .goal-kpi-item {
+    background: linear-gradient(180deg, #fafdf7 0%, #f3f7ed 100%);
+    border: 1px solid #dce8c8;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .goal-kpi-item .gk-label { font-size: 11px; font-weight: 700; color: var(--green-dark); text-transform: uppercase; letter-spacing: 0.04em; }
+  .goal-kpi-item .gk-val { font-size: 22px; font-weight: 800; color: var(--neutral-900); margin-top: 6px; letter-spacing: -0.02em; }
+  .goal-kpi-item .gk-note { font-size: 11px; color: var(--neutral-500); margin-top: 6px; line-height: 1.4; }
+  .dist-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 1100px) { .dist-grid-3 { grid-template-columns: 1fr; } }
+  .dist-panel {
+    background: var(--surface-main);
+    border: 1px solid #e8e8ec;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .dist-panel h4 { font-size: 12px; font-weight: 800; color: var(--neutral-700); margin: 0 0 12px; }
+  .dist-bar-row { display: grid; grid-template-columns: 28px 1fr 52px; gap: 8px; align-items: center; font-size: 11px; margin-bottom: 8px; }
+  .dist-bar-row.dist-bar-row--named { grid-template-columns: 22px minmax(0, 1fr) minmax(72px, 1fr) 48px; align-items: center; }
+  .dist-bar-row:last-child { margin-bottom: 0; }
+  .dist-bar-rank { font-weight: 800; color: var(--green-dark); }
+  .dist-bar-track { height: 10px; background: #e8e8ec; border-radius: 5px; overflow: hidden; }
+  .dist-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--green) 0%, #9ccc65 100%); transition: width 0.4s ease; }
+  .dist-bar-fill--ctr { background: linear-gradient(90deg, #ad1457 0%, #f48fb1 100%); }
+  .dist-bar-fill--cpi { background: linear-gradient(90deg, #1565c0 0%, #64b5f6 100%); }
+  .dist-bar-val { text-align: right; font-weight: 700; color: var(--neutral-700); font-variant-numeric: tabular-nums; }
+
+  /* 성과 대시보드 — IPM 가로 막대 (캡슐형 · 0~20 스케일 기준선 10·15) */
+  .material-ipm-hbar-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .material-ipm-hbar-pill {
+    display: inline-block;
+    background: #3f3f46;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 16px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .material-ipm-hbar-sub { font-size: 12px; color: var(--neutral-500); margin: 0; line-height: 1.5; max-width: 520px; }
+  .material-ipm-hbar-grid {
+    display: grid;
+    grid-template-columns: minmax(120px, 36%) 2px 1fr;
+    gap: 0 12px;
+    row-gap: 16px;
+    align-items: center;
+  }
+  .material-ipm-hbar-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1C1D22;
+    text-align: right;
+    line-height: 1.4;
+    padding-right: 2px;
+    word-break: keep-all;
+  }
+  .material-ipm-hbar-axis {
+    width: 2px;
+    height: 24px;
+    background: #27272a;
+    border-radius: 1px;
+    justify-self: center;
+  }
+  .material-ipm-hbar-plot {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .material-ipm-hbar-track {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    background: #ececef;
+    border-radius: 999px;
+    position: relative;
+    overflow: hidden;
+  }
+  .material-ipm-hbar-gridlines {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(to right, transparent calc(50% - 0.5px), rgba(0,0,0,0.08) 50%, transparent calc(50% + 0.5px)),
+      linear-gradient(to right, transparent calc(75% - 0.5px), rgba(94,143,20,0.5) 75%, transparent calc(75% + 0.5px));
+  }
+  .material-ipm-hbar-fill {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    border-radius: 999px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    box-sizing: border-box;
+  }
+  .material-ipm-hbar-fill--excellent { background: linear-gradient(90deg, #7AB51D 0%, #9ccc65 100%); }
+  .material-ipm-hbar-fill--improve { background: linear-gradient(90deg, #f59e0b 0%, #fcd34d 100%); }
+  .material-ipm-hbar-fill--poor { background: linear-gradient(90deg, #ef5350 0%, #e57373 100%); }
+  .material-ipm-hbar-fill--ctrl { background: repeating-linear-gradient(90deg, #bbb 0, #bbb 5px, #e0e0e0 5px, #e0e0e0 9px); }
+  .material-ipm-hbar-val-in {
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    font-variant-numeric: tabular-nums;
+  }
+  .material-ipm-hbar-val-out {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1C1D22;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    min-width: 40px;
+    text-align: right;
+  }
+  .material-ipm-hbar-foot {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    font-size: 11px;
+    color: #52525b;
+  }
+  .material-ipm-hbar-foot span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .material-ipm-hbar-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .material-ipm-hbar-scale-note { font-size: 11px; color: #a1a1aa; margin-top: 6px; }
+  .insight-report-list { margin: 0; padding: 0; list-style: none; }
+  .insight-report-list li {
+    padding: 12px 14px;
+    border: 1px solid #e8e8ec;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.55;
+    background: #fff;
+    border-left: 4px solid var(--green);
+  }
+  .insight-report-list li:last-child { margin-bottom: 0; }
+  .insight-report-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 6px;
+    margin-top: 4px;
+  }
+  .insight-report-scroll::-webkit-scrollbar { width: 8px; }
+  .insight-report-scroll::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 4px; }
+  .insight-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    border: 1px solid transparent;
+  }
+  .insight-card:last-child { margin-bottom: 0; }
+  .insight-card--adopted { background: #ecf8f1; border-color: #b8e0c8; }
+  .insight-card--rejected { background: #fdf2f4; border-color: #f5c2cb; }
+  .insight-card-icon {
+    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .insight-card-icon iconify-icon { display: flex; width: 24px; height: 24px; font-size: 24px; }
+  .insight-card-body { flex: 1; min-width: 0; }
+  .insight-card-top {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .insight-card-title { font-size: 14px; font-weight: 800; color: var(--neutral-900); line-height: 1.35; margin: 0; }
+  .insight-card-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .insight-metric-badge {
+    font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; color: #fff; white-space: nowrap;
+  }
+  .insight-metric-badge--green { background: #2e7d32; }
+  .insight-metric-badge--grey { background: #757575; }
+  .insight-metric-badge--gold { background: #b8860b; }
+  .insight-status { font-size: 13px; font-weight: 800; flex-shrink: 0; }
+  .insight-status--ok { color: #1b5e20; }
+  .insight-status--no { color: #c62828; }
+  .insight-card-desc { font-size: 13px; color: #444; line-height: 1.55; margin: 0; font-weight: 400; }
+  .winning-playbook-head {
+    font-size: 13px; font-weight: 800; color: var(--green-dark);
+    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid var(--green-light);
+  }
+  .winning-hbc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 960px) { .winning-hbc-grid { grid-template-columns: 1fr; } }
+  .winning-hbc-col {
+    background: var(--surface-main);
+    border: 1px solid #e8e8ec;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .winning-hbc-col h4 { font-size: 11px; font-weight: 800; color: var(--neutral-500); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 12px; }
+  .winning-bar-item { margin-bottom: 14px; }
+  .winning-bar-item:last-child { margin-bottom: 0; }
+  .winning-bar-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .winning-bar-rank {
+    width: 18px;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--green-dark);
+    line-height: 1.3;
+  }
+  .winning-bar-text { flex: 1; min-width: 0; }
+  .winning-bar-title { font-size: 12px; font-weight: 600; color: #333; line-height: 1.35; }
+  .winning-bar-sub { display: block; font-size: 10px; font-weight: 500; color: #888; margin-top: 3px; line-height: 1.3; }
+  .winning-bar-metric {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 800;
+    color: #1a1a1a;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .winning-bar-track {
+    height: 10px;
+    background: #ececef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-left: 26px;
+  }
+  .winning-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    min-width: 3px;
+    transition: width 0.45s ease;
+  }
+  .winning-bar-fill--hook { background: linear-gradient(90deg, #ad1457 0%, #f48fb1 100%); }
+  .winning-bar-fill--body { background: linear-gradient(90deg, #3949ab 0%, #7986cb 100%); }
+  .winning-bar-fill--cta { background: linear-gradient(90deg, #6a1b9a 0%, #ba68c8 100%); }
+  .dist-bar-name { font-size: 11px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .phase-adopt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .phase-adopt-table th, .phase-adopt-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+  .phase-adopt-table th { font-size: 11px; font-weight: 800; color: var(--neutral-500); text-transform: uppercase; background: #fafcf8; }
+  .phase-adopt-bar-wrap { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .phase-adopt-bar-fill { height: 100%; background: var(--green); border-radius: 4px; }
+  .dash-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e8e8ec;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(28,29,34,0.04);
+  }
+  .round-pill { display: inline-block; background: var(--green-light); color: var(--green-dark); font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 8px; margin-bottom: 12px; }
+  .mini-hyp-card {
+    background: var(--surface-main);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    border: 1px solid #e8e8ec;
+  }
+  .mini-hyp-card strong { color: var(--neutral-900); }
+  .mini-hyp-card span.meta { color: var(--neutral-500); font-size: 12px; }
+  .phase-rail { display: flex; gap: 0; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .phase-step {
+    flex: 1; min-width: 72px; text-align: center;
+    font-size: 10px; font-weight: 700; color: var(--neutral-500);
+    padding: 10px 4px; position: relative;
+  }
+  .phase-step.done { color: var(--metrix-go); }
+  .phase-step.current { color: var(--green); background: var(--green-light); border-radius: 8px; }
+  .phase-step.wait { color: #c4c4cc; }
+  .result-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f2; font-size: 14px; }
+  .result-row:last-child { border-bottom: none; }
+  .wire-placeholder {
+    border: 2px dashed #d4d4d8;
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--neutral-500);
+    background: #fafafa;
+    font-size: 14px;
+  }
+  .wire-placeholder strong { display: block; color: var(--neutral-700); margin-bottom: 8px; font-size: 15px; }
+  .btn-primary { background: var(--green); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-secondary { background: white; color: #444; border: 1px solid #ddd; padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-unverified { background: #f0f0f0; color: #888; }
+  .badge-testing { background: #fff3cd; color: #b8860b; }
+  .badge-adopted { background: #d4edda; color: #1a6b2d; }
+  .badge-rejected { background: #fde8e8; color: #c0392b; }
+  .badge-reverify { background: #e8f0fe; color: #1a56db; }
+  /* 상태 pill + 아이콘 (참고 UI) */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px 7px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .status-pill svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .status-pill--adopted { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+  .status-pill--rejected { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+  .status-pill--reverify { background: #ede7f6; color: #5e35b1; border: 1px solid #d1c4e9; }
+  .status-pill--unverified { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; }
+  .status-pill--testing { background: #fff8e1; color: #f57c00; border: 1px solid #ffe082; }
+  .playbook-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 5px 8px;
+    border-radius: 6px;
+    text-transform: lowercase;
+  }
+  .playbook-tag--1 { background: #e8f5e9; color: #33691e; border: 1px solid #c5e1a5; }
+  .playbook-tag--2 { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+  .playbook-tag--3 { background: #fce4ec; color: #ad1457; border: 1px solid #f48fb1; }
+  .hid-code { font-size: 13px; font-weight: 800; color: var(--green); letter-spacing: -0.02em; }
+  .phase-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    display: inline-block;
+    background: #f3e5f5;
+    color: #6a1b9a;
+    border: 1px solid #e1bee7;
+  }
+  .phase-pill--muted { background: #f3e5f5; color: #7b1fa2; }
+  .kpi-cell { font-size: 15px; font-weight: 800; color: #1a1a1a; text-align: right; }
+  .kpi-cell--empty { color: #bbb; font-weight: 600; font-size: 13px; }
+  .done-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  .done-pill--pending { background: #fff8e1; color: #e65100; }
+  .done-pill--none { background: #f5f5f5; color: #9e9e9e; }
+  .row-actions-v { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .row-actions-v button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--green);
+  }
+  .row-actions-v button.row-act-secondary { color: #888; }
+  .row-actions-v button svg { width: 14px; height: 14px; opacity: 0.85; }
+
+  .phase-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .phase-1 { background: #fff0f6; color: #c0396b; }
+  .phase-2 { background: #f0f4ff; color: #3652d9; }
+  .phase-3 { background: #f0fff4; color: #1a8a4a; }
+  .phase-4 { background: #fff8f0; color: #c06b10; }
+  .phase-5 { background: #f3e8ff; color: #6b21a8; }
+  .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: none; background: transparent; color: #666; transition: all 0.15s; }
+  .filter-tab.active { background: var(--green); color: white; font-weight: 600; }
+  .filter-tab:hover:not(.active) { background: #eee; }
+
+  /* KPI 카드 — 클릭 가능 */
+  .kpi-card {
+    background: white; border-radius: 12px; padding: 20px 24px;
+    border: 2px solid #eee; cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+  }
+  .kpi-card:hover { border-color: #ccc; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .kpi-card.active-card { border-color: var(--green); box-shadow: 0 4px 20px rgba(122,181,29,0.2); }
+  .kpi-card .click-hint {
+    position: absolute; bottom: 10px; right: 14px;
+    font-size: 10px; color: #ccc; opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .kpi-card:hover .click-hint { opacity: 1; }
+
+  .table-group {
+    margin-bottom: 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #e8ebe4;
+    background: #fff;
+    box-shadow: none;
+    overflow: hidden;
+  }
+  .table-group:first-of-type { border-top: 1px solid #e8ebe4; }
+  .table-row {
+    border-bottom: none;
+    transition: background 0.18s ease;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 76px 108px 52px minmax(180px, 1fr) 112px 90px 52px 68px 46px 72px;
+    gap: 10px 10px;
+    padding: 16px 20px;
+    align-items: center;
+    background: #fff;
+  }
+  @media (max-width: 1200px) {
+    .table-row { grid-template-columns: 76px 108px 52px 1fr; grid-auto-rows: auto; }
+  }
+  /* 상태별 행 배경: 기본 흰색, 호버 시에만 틴트 */
+  .table-group[data-status="채택"] .table-row:hover { background: #e8f5e9 !important; }
+  .table-group[data-status="기각"] .table-row:hover { background: #ffebee !important; }
+  .table-group[data-status="재검증"] .table-row:hover { background: #ede7f6 !important; }
+  .table-group[data-status="미검증"] .table-row:hover { background: #f5f5f5 !important; }
+  .table-group[data-status="검증중"] .table-row:hover { background: #fff8e1 !important; }
+  .table-group.is-open .table-row { background: #f5faf0 !important; }
+  .table-group.is-open[data-status="채택"] .table-row:hover { background: #dcedc8 !important; }
+  .table-group.is-open[data-status="기각"] .table-row:hover { background: #ffcdd2 !important; }
+  .table-group.is-open[data-status="재검증"] .table-row:hover { background: #d1c4e9 !important; }
+  .table-group.is-open[data-status="미검증"] .table-row:hover { background: #eeeeee !important; }
+  .table-group.is-open[data-status="검증중"] .table-row:hover { background: #ffecb3 !important; }
+  .table-row.hidden-row { display: none; }
+  .table-head-grid {
+    display: grid;
+    grid-template-columns: 76px 108px 52px minmax(180px, 1fr) 112px 90px 52px 68px 46px 72px;
+    gap: 10px 10px;
+    padding: 14px 20px;
+    background: #fafcf8;
+    border-bottom: 1px solid #e8ebe4;
+    font-size: 10px;
+    font-weight: 800;
+    color: #8a8f86;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    align-items: center;
+  }
+  .hyp-cell { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+  .row-chevron {
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    font-size: 11px;
+    color: #bbb;
+    line-height: 1.5;
+    transition: transform 0.15s ease, color 0.15s;
+    margin-top: 3px;
+  }
+  .table-group.is-open .row-chevron { transform: rotate(90deg); color: var(--green); }
+  .row-chevron { font-size: 10px; }
+  .table-row-expand {
+    display: none;
+    padding: 0 18px 18px;
+    background: #fff;
+  }
+  .expand-panel {
+    border: 1px solid #c5e1a5;
+    border-radius: 12px;
+    background: #fff;
+    padding: 18px 20px 20px;
+    box-shadow: 0 2px 12px rgba(122, 181, 29, 0.08);
+  }
+  .expand-visual-top {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eef2e8;
+  }
+  .expand-visual-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--green-dark);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .expand-visual-refined {
+    font-size: 15px;
+    line-height: 1.65;
+    color: #1e1f24;
+    margin: 0;
+    font-weight: 500;
+  }
+  .expand-visual-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 960px) {
+    .expand-visual-columns { grid-template-columns: 1fr; }
+  }
+  .expand-viz-box {
+    background: linear-gradient(180deg, #fafdf7 0%, #f5f8f0 100%);
+    border: 1px solid #e0e8d4;
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-height: 100px;
+  }
+  .expand-viz-box .expand-visual-label { color: #5d6b4a; font-size: 10px; margin-bottom: 8px; }
+  .expand-metric-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .expand-metric-row span { font-size: 13px; font-weight: 700; color: #666; }
+  .expand-metric-row strong { font-size: 22px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; }
+  .expand-viz-text {
+    font-size: 13px;
+    line-height: 1.55;
+    color: #333;
+    margin: 0;
+  }
+  .table-hint { font-size: 10px; color: #9ca3af; font-weight: 600; margin-top: 4px; display: block; }
+
+  .panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 100; display: none; }
+  .panel-overlay.show { display: flex; align-items: flex-start; justify-content: flex-end; }
+  .side-panel { background: white; width: 480px; min-height: 100vh; padding: 32px 28px; overflow-y: auto; box-shadow: -4px 0 24px rgba(0,0,0,0.1); }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; width: 680px; border-radius: 16px; overflow: hidden; max-height: 85vh; overflow-y: auto; }
+  .modal-tab { padding: 10px 20px; font-size: 14px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; }
+  .modal-tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+  .cycle-card { border: 1px solid #eee; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .cycle-card.win { border-left: 4px solid #1a8a4a; }
+  .cycle-card.lose { border-left: 4px solid #c0392b; }
+  .insight-box { border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  .metric-badge { background: #f0f7e0; color: var(--green); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
+  .section-label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; display: block; }
+  .form-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 9px 12px; font-size: 14px; color: #333; outline: none; box-sizing: border-box; }
+  .form-input:focus { border-color: var(--green); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* 필터 활성 시 빈 상태 */
+  .empty-state { text-align: center; padding: 40px 20px; color: #bbb; font-size: 14px; display: none; }
+
+  /* 필터 토스트 */
+  #filter-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: #222; color: white; padding: 10px 20px; border-radius: 30px;
+    font-size: 13px; font-weight: 600; z-index: 999;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  #filter-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+
+
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="brand-block">
+      <img src="design/logo.svg" width="40" height="40" alt="DOUBLEU GAMES 로고">
+      <div class="brand-text">DOUBLEU GAMES</div>
+      <div class="brand-sub">가설 관리 시스템 · DUC UA TF</div>
+    </div>
+    <nav style="padding: 12px 0; flex: 1;">
+      <div class="nav-item active" data-view="dashboard" onclick="showView('dashboard')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+        인사이트 대시보드
+      </div>
+      <div class="nav-item" data-view="db" onclick="showView('db')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-width="2"/></svg>
+        인사이트 DB
+      </div>
+      <div class="nav-item" data-view="material" onclick="showView('material')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16l4-4 4 4 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        성과 대시보드
+      </div>
+      <div class="nav-item" data-view="performance" onclick="showView('performance')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14" stroke-width="2" stroke-linecap="round"/></svg>
+        성과 조회
+      </div>
+      <div class="nav-item" data-view="gallery" onclick="showView('gallery')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="M21 15l-5-5L5 21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        소재 갤러리
+      </div>
+    </nav>
+    <div style="padding: 12px 14px 20px; margin-top: auto;">
+      <a href="https://app.sensortower.com/" target="_blank" rel="noopener noreferrer" class="sidebar-footer-link">Sensor Tower 바로가기 ↗</a>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="top-bar">
+      <div>
+        <h1 id="page-title">인사이트 대시보드</h1>
+        <p id="page-subtitle">위닝 소재·HOOK/BODY/CTA 분포·핵심 인사이트</p>
+      </div>
+      <div id="top-bar-actions" style="display: none; flex-wrap: wrap; gap: 8px; align-items: center;"></div>
+    </header>
+    <div class="main-scroll">
+
+    <!-- ─── 뷰: 인사이트 대시보드 ─── -->
+    <div id="view-dashboard" class="view-page is-active" style="padding-top: 20px;">
+
+      <div class="dash-card">
+        <div class="dash-section-title" style="font-size:20px;">위닝 소재 리스트</div>
+
+
+        <!-- HOOK / BODY / CTA — 3열 횡렬 배치 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:start;">
+
+        <!-- HOOK -->
+        <div style="background:#faf5f8; border:1px solid #f0d6e6; border-radius:12px; padding:16px 14px;">
+          <div style="font-size:12px; font-weight:800; color:#ad1457; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,#ad1457,#f48fb1);"></span>
+            Phase 1 · HOOK <span style="font-weight:600; color:#bbb; font-size:11px; text-transform:none; letter-spacing:0;">— CTR 기준 상위 5위</span>
+          </div>
+          <!-- 축 레이블 -->
+          <div style="display:flex; align-items:center; gap:0; padding-left:160px; margin-bottom:4px;">
+            <div style="flex:1; position:relative; height:16px;">
+              <span style="position:absolute; left:0%; font-size:9px; color:#888; font-weight:700;">0%<br><span style="font-size:8px;color:#bbb;">CTRL</span></span>
+            </div>
+          </div>
+          <!-- 막대들 -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <!-- 즉각 보상: CTR 3.2% → IPM 환산 Top (가장 높음, 53.6% 상당 표시) -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#ad1457; text-align:center;">1</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#ad1457; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">즉각 보상 시각화</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#ddeefa; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:85%; background:linear-gradient(90deg,#0457ac,#7ab8e8); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CTR 3.2%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">코인 분출</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#ad1457; text-align:center;">2</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#ad1457; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">스포츠베팅 톤 훅</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#d9f4e8; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:73%; background:linear-gradient(90deg,#1a9145,#72d4a0); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CTR 2.95%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">역동 UI</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#ad1457; text-align:center;">3</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#ad1457; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">UGC 리액션 오프닝</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#e8f9d0; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:63%; background:linear-gradient(90deg,#5cb827,#b5e87a); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CTR 2.7%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">캐주얼 톤</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#ad1457; text-align:center;">4</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#ad1457; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">클리프행어 미결말</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#fef6dc; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:46%; background:linear-gradient(90deg,#e8a000,#f9d860); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#5a3000;">CTR 2.35%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">궁금증 유발</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#ad1457; text-align:center;">5</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#ad1457; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">빅윈 모먼트 노출</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#fde8e8; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:37%; background:linear-gradient(90deg,#d93025,#f08080); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CTR 2.2%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">대형 당첨</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BODY -->
+        <div style="background:#f5f7fc; border:1px solid #d6ddf0; border-radius:12px; padding:16px 14px;">
+          <div style="font-size:12px; font-weight:800; color:#3949ab; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,#3949ab,#7986cb);"></span>
+            Phase 2 · BODY <span style="font-weight:600; color:#bbb; font-size:11px; text-transform:none; letter-spacing:0;">— CPI 기준 상위 5위 (낮을수록 우수)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0; padding-left:160px; margin-bottom:4px;">
+            <div style="flex:1; position:relative; height:16px;">
+              <span style="position:absolute; left:0%; font-size:9px; color:#888; font-weight:700;">$4.30<br><span style="font-size:8px;color:#bbb;">CTRL</span></span>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#3949ab; text-align:center;">1</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#3949ab; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">동물(강아지·고양이) 중심</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#ddeefa; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:89%; background:linear-gradient(90deg,#0457ac,#7ab8e8); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">$3.50</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">vs 인물</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#3949ab; text-align:center;">2</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#3949ab; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">게임플레이 루프 클로즈업</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#d9f4e8; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:78%; background:linear-gradient(90deg,#1a9145,#72d4a0); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">$3.62</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">스핀·당첨</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#3949ab; text-align:center;">3</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#3949ab; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">실제 플레이 POV</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#e8f9d0; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:63%; background:linear-gradient(90deg,#5cb827,#b5e87a); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">$3.78</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">손·UI 시점</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#3949ab; text-align:center;">4</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#3949ab; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">성숙 유머 바디</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#fef6dc; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:50%; background:linear-gradient(90deg,#e8a000,#f9d860); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#5a3000;">$3.90</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">40–60 타깃</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#3949ab; text-align:center;">5</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#3949ab; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">인포머셜 설명 컷</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#fde8e8; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:38%; background:linear-gradient(90deg,#d93025,#f08080); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">$4.12</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">데모형</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div style="background:#f7f4fb; border:1px solid #ddd0ef; border-radius:12px; padding:16px 14px;">
+          <div style="font-size:12px; font-weight:800; color:#6a1b9a; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,#6a1b9a,#ba68c8);"></span>
+            Phase 3 · CTA <span style="font-weight:600; color:#bbb; font-size:11px; text-transform:none; letter-spacing:0;">— CVR 기준 상위 5위</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0; padding-left:160px; margin-bottom:4px;">
+            <div style="flex:1; position:relative; height:16px;">
+              <span style="position:absolute; left:0%; font-size:9px; color:#888; font-weight:700;">0%<br><span style="font-size:8px;color:#bbb;">CTRL</span></span>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#6a1b9a; text-align:center;">1</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#6a1b9a; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">「지금 플레이」 단일 문구</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#ddeefa; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:89%; background:linear-gradient(90deg,#0457ac,#7ab8e8); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CVR 12.5%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">그린 버튼</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#6a1b9a; text-align:center;">2</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#6a1b9a; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">한 줄 베네핏 + CTA</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#d9f4e8; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:76%; background:linear-gradient(90deg,#1a9145,#72d4a0); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CVR 11.2%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">보상 강조</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#6a1b9a; text-align:center;">3</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#6a1b9a; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">카운트다운 타이머</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#e8f9d0; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:60%; background:linear-gradient(90deg,#5cb827,#b5e87a); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CVR 9.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">희소성</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#6a1b9a; text-align:center;">4</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#6a1b9a; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">앱 아이콘 + 스토어 배지</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#fef6dc; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:50%; background:linear-gradient(90deg,#e8a000,#f9d860); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#5a3000;">CVR 9.1%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">신뢰 보조</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 24px; font-size:12px; font-weight:800; color:#6a1b9a; text-align:center;">5</div>
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#6a1b9a; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">긴 카피 2줄 CTA</div>
+              <div style="flex:1; position:relative; height:26px;">
+                <div style="position:absolute; inset:0; background:#fde8e8; border-radius:6px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:34%; background:linear-gradient(90deg,#d93025,#f08080); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#7a5200;">CVR 7.6%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:60px; text-align:right; flex-shrink:0;">설명형</span>
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /3열 grid -->
+
+        <!-- 범례 -->
+        <div style="margin-top:16px; display:flex; flex-wrap:wrap; gap:10px 18px; font-size:11px; color:#52525b; border-top:1px solid #f0f0f2; padding-top:12px;">
+          <span style="display:inline-flex; align-items:center; gap:5px;"><span style="display:inline-block; width:14px; height:6px; background:linear-gradient(90deg,#0457ac,#7ab8e8); border-radius:2px;"></span>1위</span>
+          <span style="display:inline-flex; align-items:center; gap:5px;"><span style="display:inline-block; width:14px; height:6px; background:linear-gradient(90deg,#1a9145,#72d4a0); border-radius:2px;"></span>2위</span>
+          <span style="display:inline-flex; align-items:center; gap:5px;"><span style="display:inline-block; width:14px; height:6px; background:linear-gradient(90deg,#5cb827,#b5e87a); border-radius:2px;"></span>3위</span>
+          <span style="display:inline-flex; align-items:center; gap:5px;"><span style="display:inline-block; width:14px; height:6px; background:linear-gradient(90deg,#e8a000,#f9d860); border-radius:2px;"></span>4위</span>
+          <span style="display:inline-flex; align-items:center; gap:5px;"><span style="display:inline-block; width:14px; height:6px; background:linear-gradient(90deg,#d93025,#f08080); border-radius:2px;"></span>5위</span>
+        </div>
+      </div>
+
+      <div class="dash-card" style="margin-bottom: 0;">
+        <div class="dash-section-title" style="font-size:20px;">핵심 인사이트 레포트</div>
+        <p style="font-size: 13px; color: var(--neutral-500); margin: -6px 0 10px;">지금까지 검증된 크리에이티브 전략 패턴 · 아이콘: <a href="https://icon-sets.iconify.design/akar-icons/" target="_blank" rel="noopener" style="color:var(--green-dark);">Akar Icons</a> (Iconify)</p>
+        <div class="insight-report-scroll">
+          <div class="insight-card insight-card--adopted">
+            <div class="insight-card-icon" style="background:#fff3e0; color:#e65100;">
+              <iconify-icon icon="akar-icons:trophy" aria-hidden="true"></iconify-icon>
+            </div>
+            <div class="insight-card-body">
+              <div class="insight-card-top">
+                <div class="insight-card-title-row">
+                  <h3 class="insight-card-title">즉각 보상 시각화 &gt; 서사/설명형</h3>
+                  <span class="insight-metric-badge insight-metric-badge--green">CTR 3.2%</span>
+                </div>
+                <span class="insight-status insight-status--ok">채택</span>
+              </div>
+              <p class="insight-card-desc">Phase 1(훅) 1차 지표 CTR 기준, 대조군 대비 +20% 목표 달성. 즉각 보상 시각(코인 분출·슬롯 당첨)이 서사형 대비 우위. 보조 IPM도 양호.</p>
+            </div>
+          </div>
+          <div class="insight-card insight-card--adopted">
+            <div class="insight-card-icon" style="background:#fce4ec; color:#c2185b;">
+              <iconify-icon icon="akar-icons:person" aria-hidden="true"></iconify-icon>
+            </div>
+            <div class="insight-card-body">
+              <div class="insight-card-top">
+                <div class="insight-card-title-row">
+                  <h3 class="insight-card-title">동물(강아지·고양이) &gt; 사람 소재</h3>
+                  <span class="insight-metric-badge insight-metric-badge--grey">CPI $3.50</span>
+                </div>
+                <span class="insight-status insight-status--ok">채택</span>
+              </div>
+              <p class="insight-card-desc">Phase 2(바디) 1차 지표 CPI −15% 목표 달성. 동물 캐릭터가 인물 대조 대비 설치 단가 우위. D3 Retention 정상 구간 유지.</p>
+            </div>
+          </div>
+          <div class="insight-card insight-card--rejected">
+            <div class="insight-card-icon" style="background:#e3f2fd; color:#1565c0;">
+              <iconify-icon icon="akar-icons:light-bulb" aria-hidden="true"></iconify-icon>
+            </div>
+            <div class="insight-card-body">
+              <div class="insight-card-top">
+                <div class="insight-card-title-row">
+                  <h3 class="insight-card-title">메시지 길이보다 정보 가치</h3>
+                  <span class="insight-metric-badge insight-metric-badge--grey">CPI $4.05</span>
+                </div>
+                <span class="insight-status insight-status--no">기각</span>
+              </div>
+              <p class="insight-card-desc">Phase 2(바디) CPI 목표 미달. 카피 길이보다 정보 밀도가 핵심 — 무의미한 문장만 줄여도 CPI 개선 여지.</p>
+            </div>
+          </div>
+          <div class="insight-card insight-card--adopted">
+            <div class="insight-card-icon" style="background:#e8f5e9; color:#2e7d32;">
+              <iconify-icon icon="akar-icons:chat-bubble" aria-hidden="true"></iconify-icon>
+            </div>
+            <div class="insight-card-body">
+              <div class="insight-card-top">
+                <div class="insight-card-title-row">
+                  <h3 class="insight-card-title">UGC 톤 훅 + 단일 CTA</h3>
+                  <span class="insight-metric-badge insight-metric-badge--gold">CVR 11.2%</span>
+                </div>
+                <span class="insight-status insight-status--ok">채택</span>
+              </div>
+              <p class="insight-card-desc">Phase 3(CTA) 1차 지표 CVR +10% 목표 근접. 리액션형 훅과 단일 CTA 조합에서 전환 우위. 다중 메시지는 혼란 유발(H011 사례).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── 뷰: 성과 대시보드 ─── -->
+    <div id="view-material" class="view-page" style="padding-top: 20px;">
+
+      <!-- 필터 바 -->
+      <div style="background:#fff; border:1px solid #e4e4e7; border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:12px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.05em;">필터</span>
+        <select style="border:1px solid #c5e1a5; border-radius:8px; padding:6px 12px; font-size:13px; color:#33691e; background:#f1f8e9; font-weight:600;">
+          <option>전체 플레이북</option><option>playbook1</option><option>playbook2</option><option>playbook3</option>
+        </select>
+        <select style="border:1px solid #ddd; border-radius:8px; padding:6px 12px; font-size:13px; color:#444; background:#fff;">
+          <option>전체 Phase</option><option>Phase 0: 대조군</option><option>Phase 1: 훅</option><option>Phase 2: 바디</option><option>Phase 3: CTA</option><option>Phase 4: 최종 조합 검증</option><option>Phase 5: 스케일업 + 다음 사이클</option>
+        </select>
+        <select style="border:1px solid #ddd; border-radius:8px; padding:6px 12px; font-size:13px; color:#444; background:#fff;">
+          <option>전체 상태</option><option>채택</option><option>기각</option><option>검증중</option><option>미검증</option>
+        </select>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:12px; color:#aaa;">우수 소재 기준</span>
+          <span style="display:inline-block; width:24px; height:3px; background:repeating-linear-gradient(90deg,#7AB51D 0,#7AB51D 6px,transparent 6px,transparent 10px); border-radius:2px;"></span>
+          <span style="font-size:13px; font-weight:800; color:#5E8F14;">IPM ≥ 15</span>
+        </div>
+      </div>
+
+      <!-- KPI 요약 카드 4개 -->
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px;">
+
+        <!-- 전체 평균 IPM -->
+        <div style="background:linear-gradient(135deg,#f0f7e0 0%,#e8f5d0 100%); border:1.5px solid #c5e1a5; border-radius:14px; padding:18px 20px; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-10px;right:-10px;width:70px;height:70px;border-radius:50%;background:rgba(122,181,29,.12);"></div>
+          <div style="font-size:11px; font-weight:800; color:#5E8F14; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">전체 평균 IPM</div>
+          <div style="font-size:32px; font-weight:800; color:#1C1D22; letter-spacing:-0.03em; line-height:1;">14.3</div>
+          <div style="margin-top:8px; display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; color:#5E8F14; font-weight:700; background:#d4edae; padding:2px 8px; border-radius:20px;">▲ 우수 기준 근접</span>
+            <span style="font-size:11px; color:#888;">우수 기준 15</span>
+          </div>
+        </div>
+
+        <!-- 우수 소재 (IPM ≥15) -->
+        <div style="background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%); border:1.5px solid #a5d6a7; border-radius:14px; padding:18px 20px; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-10px;right:-10px;width:70px;height:70px;border-radius:50%;background:rgba(46,125,50,.1);"></div>
+          <div style="font-size:11px; font-weight:800; color:#2e7d32; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">우수 소재 (IPM ≥15)</div>
+          <div style="font-size:32px; font-weight:800; color:#1C1D22; letter-spacing:-0.03em; line-height:1;">3<span style="font-size:16px; color:#888; font-weight:600;">/ 7개</span></div>
+          <div style="margin-top:8px; height:6px; background:#fff; border-radius:4px; overflow:hidden;">
+            <div style="height:100%; width:43%; background:linear-gradient(90deg,#2e7d32,#66bb6a); border-radius:4px;"></div>
+          </div>
+          <div style="font-size:11px; color:#555; margin-top:4px;">우수 비율 43% · <span style="color:#e65100;">개선가능(10~15) 4건</span></div>
+        </div>
+
+        <!-- 최고 IPM 소재 -->
+        <div style="background:linear-gradient(135deg,#fff8e1 0%,#fff3cd 100%); border:1.5px solid #ffe082; border-radius:14px; padding:18px 20px; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-10px;right:-10px;width:70px;height:70px;border-radius:50%;background:rgba(245,158,11,.1);"></div>
+          <div style="font-size:11px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">최고 IPM 소재</div>
+          <div style="font-size:32px; font-weight:800; color:#1C1D22; letter-spacing:-0.03em; line-height:1;">17.2</div>
+          <div style="margin-top:8px; display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:13px; font-weight:800; color:#1C1D22;">무료 보상 직접 제시</span>
+            <span style="font-size:11px; color:#666;">가설명 표기 · 테스트 소재</span>
+          </div>
+        </div>
+
+        <!-- 대조군 IPM (기준) -->
+        <div style="background:linear-gradient(135deg,#f5f5f5 0%,#eeeeee 100%); border:1.5px solid #ddd; border-radius:14px; padding:18px 20px; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-10px;right:-10px;width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.05);"></div>
+          <div style="font-size:11px; font-weight:800; color:#616161; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">대조군 IPM (기준)</div>
+          <div style="font-size:32px; font-weight:800; color:#1C1D22; letter-spacing:-0.03em; line-height:1;">11.2</div>
+          <div style="margin-top:8px; display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; color:#888;">CTRL · playbook1 Phase 0 위너</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 차트 2열: IPM 랭킹 + 대조군 비교 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+
+        <!-- IPM 소재 순위 — 대조군 대비 상승률 스타일 (CTRL IPM 11.2 기준) -->
+        <div class="dash-card" style="margin-bottom:0;">
+          <div class="material-ipm-hbar-head">
+            <span class="material-ipm-hbar-pill">IPM 소재 순위</span>
+            <p class="material-ipm-hbar-sub">CTRL IPM <strong>11.2</strong> 기준 · 막대 = 대조군 대비 상승률(%). 세로선: <span style="color:#5E8F14;font-weight:700;">●</span> <strong>우수 기준 (IPM≥15, +33.9%)</strong> · <span style="color:#9e9e9e;font-weight:700;">●</span> <strong>개선한계 (IPM&lt;10, −10.7%)</strong></p>
+          </div>
+
+          <!-- 차트 바디: 레이블 + 바 영역 -->
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+
+            <!-- 축 레이블 행 (상단) -->
+            <div style="display:flex; align-items:center; gap:0; padding-left:130px;">
+              <div style="flex:1; position:relative; height:18px;">
+                <span style="position:absolute; left:0%; font-size:9px; color:#888; font-weight:700; white-space:nowrap;">0%<br><span style="font-size:8px; color:#bbb;">CTRL</span></span>
+                <!-- 우수 기준: +33.9% → 33.9/60*100 = 56.5% -->
+                <span style="position:absolute; left:56.5%; transform:translateX(-50%); font-size:9px; color:#5E8F14; font-weight:800; white-space:nowrap;">+33.9%<br><span style="font-size:8px; color:#888;">IPM≥15</span></span>
+              </div>
+            </div>
+
+            <!-- 소재 행들 (스케일: −20% ~ +60%, 총 80% range, 0% = left:25%) -->
+
+            <!-- H001: +53.6% → width = 53.6/60*100 = 89.3% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#7AB51D; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">무료 보상 직접 제시</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#f5faf0; border-radius:6px; border:1px solid #e0ead0;"></div>
+                <!-- 우수 기준선 +33.9% at 56.5% -->
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:89.3%; background:linear-gradient(90deg,#7AB51D,#9ccc65); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#fff;">+53.6%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">17.2</span>
+            </div>
+
+            <!-- H004: +43.8% → width = 43.8/60*100 = 73% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#7AB51D; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">UGC 리액션</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#f5faf0; border-radius:6px; border:1px solid #e0ead0;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:73%; background:linear-gradient(90deg,#7AB51D,#9ccc65); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#fff;">+43.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">16.1</span>
+            </div>
+
+            <!-- H006: +34.8% → width = 34.8/60*100 = 58% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#7AB51D; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">동물 vs 사람 소재</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#f5faf0; border-radius:6px; border:1px solid #e0ead0;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:58%; background:linear-gradient(90deg,#7AB51D,#9ccc65); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#fff;">+34.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">15.1</span>
+            </div>
+
+            <!-- H005: +26.8% → width = 26.8/60*100 = 44.7% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#f57c00; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">스포츠 베팅 톤 앤 매너</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#fff8f0; border-radius:6px; border:1px solid #ffe0b2;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:44.7%; background:linear-gradient(90deg,#f59e0b,#fcd34d); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#92400e;">+26.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">14.2</span>
+            </div>
+
+            <!-- H003: +20.5% → width = 20.5/60*100 = 34.2% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#f57c00; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">실제 플레이 POV</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#fff8f0; border-radius:6px; border:1px solid #ffe0b2;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:34.2%; background:linear-gradient(90deg,#f59e0b,#fcd34d); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#92400e;">+20.5%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">13.5</span>
+            </div>
+
+            <!-- H002: +14.3% → width = 14.3/60*100 = 23.8% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#c62828; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">궁금증 유발 (클리프행어)</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#fff9f0; border-radius:6px; border:1px solid #ffe0b2;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:23.8%; background:linear-gradient(90deg,#f59e0b,#fcd34d); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:11px; font-weight:800; color:#92400e;">+14.3%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">12.8</span>
+            </div>
+
+            <!-- H007: +2.7% → width = 2.7/60*100 = 4.5% -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#c62828; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">메시지 길이 테스트</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#fff9f0; border-radius:6px; border:1px solid #ffe0b2;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <div style="position:absolute; left:0; top:3px; bottom:3px; width:4.5%; background:linear-gradient(90deg,#f59e0b,#fcd34d); border-radius:4px; z-index:2;"></div>
+                <span style="position:absolute; left:calc(4.5% + 6px); top:50%; transform:translateY(-50%); font-size:11px; font-weight:800; color:#92400e; z-index:2; white-space:nowrap;">+2.7%</span>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">11.5</span>
+            </div>
+
+            <!-- CTRL 대조군 (0%) — 트랙 왼쪽 끝 핀 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:600; color:#888; flex-shrink:0; line-height:1.25; text-align:right; padding-right:6px;">대조군 기준 (CTRL)</div>
+              <div style="flex:1; position:relative; height:28px;">
+                <div style="position:absolute; inset:0; background:#f5f5f5; border-radius:6px; border:1px solid #e0e0e0;"></div>
+                <div style="position:absolute; left:56.5%; top:-3px; bottom:-3px; width:2px; background:#5E8F14; z-index:3; border-radius:1px;"></div>
+                <!-- 0% 핀: 왼쪽 끝 고정 -->
+                <div style="position:absolute; left:0; top:4px; bottom:4px; width:32px; background:repeating-linear-gradient(90deg,#bbb 0,#bbb 5px,#e0e0e0 5px,#e0e0e0 9px); border-radius:4px; z-index:2; display:flex; align-items:center; justify-content:center;">
+                  <span style="font-size:10px; font-weight:800; color:#555;">0%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">11.2</span>
+            </div>
+
+          </div><!-- end flex column -->
+
+          <!-- 범례 + 기준선 설명 -->
+          <div class="material-ipm-hbar-foot" style="margin-top:16px; flex-direction:column; align-items:flex-start; gap:8px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px 18px;">
+              <span><span class="material-ipm-hbar-dot" style="background:linear-gradient(135deg,#7AB51D,#9ccc65);"></span> 우수 (IPM ≥15)</span>
+              <span><span class="material-ipm-hbar-dot" style="background:linear-gradient(135deg,#f59e0b,#fcd34d);"></span> 개선가능 (10 ≤ IPM &lt; 15)</span>
+              <span><span class="material-ipm-hbar-dot" style="background:repeating-linear-gradient(90deg,#bbb 0,#bbb 3px,#e5e5e5 3px,#e5e5e5 5px);"></span> 대조군 (IPM 11.2, 0%)</span>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px 18px; font-size:11px; color:#52525b;">
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <span style="display:inline-block; width:2px; height:12px; background:#5E8F14; border-radius:1px; flex-shrink:0;"></span>
+                <strong style="color:#5E8F14;">우수 기준선</strong> IPM≥15 = +33.9%
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px; color:#9e9e9e;">
+                <strong style="color:#757575;">개선한계</strong> IPM&lt;10 = −10.7% (차트 범위 밖)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 대조군 vs 테스트 IPM 비교 (상승률) -->
+        <div class="dash-card" style="margin-bottom:0;">
+          <div class="dash-section-title">대조군 대비 IPM 상승률</div>
+          <p style="font-size:12px; color:var(--neutral-500); margin:-6px 0 16px;">CTRL IPM 11.2 기준 · 양수(초록) = 개선 · 음수(빨강) = 악화</p>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+
+            <!-- H001 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#7AB51D; flex-shrink:0; line-height:1.25;">무료 보상 직접 제시</div>
+              <div style="flex:1; position:relative; height:28px; background:#f5faf0; border-radius:6px; overflow:hidden; border:1px solid #e0ead0;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:53.6%; background:linear-gradient(90deg,#7AB51D,#9ccc65); border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#fff;">+53.6%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">17.2</span>
+            </div>
+
+            <!-- H004 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#7AB51D; flex-shrink:0; line-height:1.25;">UGC 리액션</div>
+              <div style="flex:1; position:relative; height:28px; background:#f5faf0; border-radius:6px; overflow:hidden; border:1px solid #e0ead0;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:43.8%; background:linear-gradient(90deg,#7AB51D,#9ccc65); border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#fff;">+43.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">16.1</span>
+            </div>
+
+            <!-- H006 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#7AB51D; flex-shrink:0; line-height:1.25;">동물 vs 사람 소재</div>
+              <div style="flex:1; position:relative; height:28px; background:#f5faf0; border-radius:6px; overflow:hidden; border:1px solid #e0ead0;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:34.8%; background:linear-gradient(90deg,#7AB51D,#9ccc65); border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#fff;">+34.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">15.1</span>
+            </div>
+
+            <!-- H005 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#f57c00; flex-shrink:0; line-height:1.25;">스포츠 베팅 톤 앤 매너</div>
+              <div style="flex:1; position:relative; height:28px; background:#fff8f0; border-radius:6px; overflow:hidden; border:1px solid #ffe0b2;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:26.8%; background:linear-gradient(90deg,#f59e0b,#fcd34d); border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#92400e;">+26.8%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">14.2</span>
+            </div>
+
+            <!-- H003 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#f57c00; flex-shrink:0; line-height:1.25;">실제 플레이 POV</div>
+              <div style="flex:1; position:relative; height:28px; background:#fff8f0; border-radius:6px; overflow:hidden; border:1px solid #ffe0b2;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:20.5%; background:linear-gradient(90deg,#f59e0b,#fcd34d); border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#92400e;">+20.5%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">13.5</span>
+            </div>
+
+            <!-- H002 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#c62828; flex-shrink:0; line-height:1.25;">궁금증 유발 (클리프행어)</div>
+              <div style="flex:1; position:relative; height:28px; background:#ffebee; border-radius:6px; overflow:hidden; border:1px solid #ffcdd2;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:14.3%; background:linear-gradient(90deg,#ef5350,#e57373); border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#fff;">+14.3%</span>
+                </div>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">12.8</span>
+            </div>
+
+            <!-- H007 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:0 0 128px; font-size:11px; font-weight:700; color:#c62828; flex-shrink:0; line-height:1.25;">메시지 길이 테스트</div>
+              <div style="flex:1; position:relative; height:28px; background:#ffebee; border-radius:6px; overflow:hidden; border:1px solid #ffcdd2;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:2.7%; background:linear-gradient(90deg,#ef5350,#e57373); border-radius:6px;"></div>
+                <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:800; color:#c62828;">+2.7%</span>
+              </div>
+              <span style="font-size:11px; color:#888; width:40px; text-align:right; flex-shrink:0;">11.5</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 소재 성과 테이블 -->
+      <div class="dash-card" style="margin-bottom:0; padding:0; overflow:hidden;">
+        <div style="padding:18px 20px 14px; border-bottom:1px solid #eee;">
+          <div class="dash-section-title" style="margin-bottom:4px;">소재별 성과 테이블</div>
+          <p style="font-size:12px; color:var(--neutral-500); margin:0;">IPM 기준 정렬 · 클릭 시 인사이트 DB 해당 가설로 이동</p>
+        </div>
+
+        <!-- 테이블 헤더 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:10px 20px; background:#fafcf8; border-bottom:1px solid #eee; font-size:10px; font-weight:800; color:#8a8f86; text-transform:uppercase; letter-spacing:.05em; align-items:center;">
+          <div>H코드</div><div>플레이북</div><div>Phase</div><div>소재명</div><div style="text-align:right;">IPM</div><div style="text-align:right;">CTR</div><div style="text-align:right;">CPI</div><div>집행기간</div><div>상태</div>
+        </div>
+
+        <!-- H001 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; border-bottom:1px solid #f0f0f2; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#f5faf0'" onmouseout="this.style.background=''"  onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H001</div>
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="phase-tag phase-1" style="font-size:10px; padding:3px 7px;">P1 훅</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260401_H001_무료보상_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">무료 보상 직접 제시</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#2e7d32;">17.2</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.9%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#1565c0;">$3.35</div>
+          <div style="font-size:11px; color:#666;">26.04 ~ 05.10</div>
+          <div><span class="status-pill status-pill--adopted" style="font-size:11px; padding:4px 8px;">채택</span></div>
+        </div>
+
+        <!-- H004 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; border-bottom:1px solid #f0f0f2; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#f5faf0'" onmouseout="this.style.background=''" onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H004</div>
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="phase-tag phase-1" style="font-size:10px; padding:3px 7px;">P1 훅</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260401_H004_UGC리액션_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">UGC 리액션</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#2e7d32;">16.1</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.7%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#1565c0;">$3.50</div>
+          <div style="font-size:11px; color:#666;">26.04 ~ 05.10</div>
+          <div><span class="status-pill status-pill--adopted" style="font-size:11px; padding:4px 8px;">채택</span></div>
+        </div>
+
+        <!-- H006 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; border-bottom:1px solid #f0f0f2; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#f5faf0'" onmouseout="this.style.background=''" onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H006</div>
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="phase-tag phase-2" style="font-size:10px; padding:3px 7px;">P2 바디</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260510_H006_동물캐릭터_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">동물 vs 사람 소재</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#2e7d32;">15.1</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.6%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#1565c0;">$3.50</div>
+          <div style="font-size:11px; color:#666;">26.05 ~ 06.05</div>
+          <div><span class="status-pill status-pill--adopted" style="font-size:11px; padding:4px 8px;">채택</span></div>
+        </div>
+
+        <!-- H005 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; border-bottom:1px solid #f0f0f2; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#fffbf0'" onmouseout="this.style.background=''" onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H005</div>
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="phase-tag phase-1" style="font-size:10px; padding:3px 7px;">P1 훅</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260401_H005_스포츠베팅톤_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">스포츠 베팅 톤 앤 매너</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#f57c00;">14.2</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.4%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#1565c0;">$3.80</div>
+          <div style="font-size:11px; color:#666;">26.04 ~ 05.10</div>
+          <div><span class="status-pill status-pill--adopted" style="font-size:11px; padding:4px 8px;">채택</span></div>
+        </div>
+
+        <!-- H003 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; border-bottom:1px solid #f0f0f2; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#fff8f0'" onmouseout="this.style.background=''" onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H003</div>
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="phase-tag phase-1" style="font-size:10px; padding:3px 7px;">P1 훅</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260401_H003_실제플레이POV_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">실제 플레이 POV</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#f57c00;">13.5</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.55%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#c62828;">$3.90</div>
+          <div style="font-size:11px; color:#666;">26.04 ~ 05.10</div>
+          <div><span class="status-pill status-pill--rejected" style="font-size:11px; padding:4px 8px;">기각</span></div>
+        </div>
+
+        <!-- H002 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; border-bottom:1px solid #f0f0f2; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background=''" onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H002</div>
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="phase-tag phase-1" style="font-size:10px; padding:3px 7px;">P1 훅</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260401_H002_클리프행어_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">궁금증 유발 (클리프행어)</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#c62828;">12.8</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.4%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#c62828;">$4.05</div>
+          <div style="font-size:11px; color:#666;">26.04 ~ 05.10</div>
+          <div><span class="status-pill status-pill--rejected" style="font-size:11px; padding:4px 8px;">기각</span></div>
+        </div>
+
+        <!-- H007 -->
+        <div style="display:grid; grid-template-columns:60px 90px 80px 1fr 72px 64px 72px 100px 80px; gap:8px; padding:13px 20px; align-items:center; cursor:pointer; transition:background .15s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background=''" onclick="showView('db')">
+          <div style="font-size:13px; font-weight:800; color:#7AB51D;">H007</div>
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="phase-tag phase-2" style="font-size:10px; padding:3px 7px;">P2 바디</span></div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#1C1D22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">DUC_260510_H007_메시지길이_N3A_UA_VID_hor</div>
+            <div style="font-size:11px; color:#aaa; margin-top:1px;">메시지 길이 테스트</div>
+          </div>
+          <div style="text-align:right; font-size:15px; font-weight:800; color:#c62828;">11.5</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#ad1457;">2.2%</div>
+          <div style="text-align:right; font-size:13px; font-weight:700; color:#c62828;">$4.05</div>
+          <div style="font-size:11px; color:#666;">26.05 ~ 06.05</div>
+          <div><span class="status-pill status-pill--rejected" style="font-size:11px; padding:4px 8px;">기각</span></div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ─── 뷰: 인사이트 DB ─── -->
+    <div id="view-db" class="view-page" style="padding-top: 20px;">
+
+    <p style="font-size: 13px; color: #71717a; margin: 0 0 16px;">테이블에서 가설을 필터·검색합니다 · 상단 바에서 등록</p>
+
+    <!-- KPI 카드 4개 -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;">
+
+      <div class="kpi-card active-card" id="kpi-all" onclick="filterByKPI('all', this)">
+        <span class="click-hint">클릭하여 필터 ↓</span>
+        <div class="section-label">총 가설</div>
+        <div style="font-size: 28px; font-weight: 800; color: #222;">13개</div>
+        <div style="font-size: 12px; color: #888; margin-top: 4px;">누적 등록</div>
+        <div style="margin-top: 10px; height: 3px; background: #eee; border-radius: 2px;">
+          <div style="height: 3px; background: var(--green); border-radius: 2px; width: 100%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-채택" onclick="filterByKPI('채택', this)">
+        <span class="click-hint">클릭하여 필터 ↓</span>
+        <div class="section-label">채택</div>
+        <div style="font-size: 28px; font-weight: 800; color: #1a6b2d;">3개</div>
+        <div style="font-size: 12px; color: #888; margin-top: 4px;">채택률 23%</div>
+        <div style="margin-top: 10px; height: 3px; background: #eee; border-radius: 2px;">
+          <div style="height: 3px; background: #1a8a4a; border-radius: 2px; width: 23%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-검증중" onclick="filterByKPI('검증중', this)">
+        <span class="click-hint">클릭하여 필터 ↓</span>
+        <div class="section-label">검증중</div>
+        <div style="font-size: 28px; font-weight: 800; color: #b8860b;">2개</div>
+        <div style="font-size: 12px; color: #888; margin-top: 4px;">현재 집행중</div>
+        <div style="margin-top: 10px; height: 3px; background: #eee; border-radius: 2px;">
+          <div style="height: 3px; background: #b8860b; border-radius: 2px; width: 15%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpi-미검증" onclick="filterByKPI('미검증', this)">
+        <span class="click-hint">클릭하여 필터 ↓</span>
+        <div class="section-label">미검증</div>
+        <div style="font-size: 28px; font-weight: 800; color: #888;">4개</div>
+        <div style="font-size: 12px; color: #888; margin-top: 4px;">테스트 대기</div>
+        <div style="margin-top: 10px; height: 3px; background: #eee; border-radius: 2px;">
+          <div style="height: 3px; background: #ccc; border-radius: 2px; width: 31%;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 필터 & 검색 바 -->
+    <div style="background: white; border-radius: 12px; padding: 14px 16px; border: 1px solid #eee; margin-bottom: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 12px; color: #aaa; margin-right: 4px;">상태</span>
+          <button class="filter-tab active" id="tab-all"       onclick="filterByTab('all')">전체 <span style="opacity:0.7;font-size:11px;">13</span></button>
+          <button class="filter-tab"        id="tab-미검증"    onclick="filterByTab('미검증')" style="color:#888;">미검증 <span style="opacity:0.7;font-size:11px;">4</span></button>
+          <button class="filter-tab"        id="tab-검증중"    onclick="filterByTab('검증중')" style="color:#b8860b;">검증중 <span style="opacity:0.7;font-size:11px;">2</span></button>
+          <button class="filter-tab"        id="tab-채택"      onclick="filterByTab('채택')"  style="color:#1a6b2d;">채택 <span style="opacity:0.7;font-size:11px;">3</span></button>
+          <button class="filter-tab"        id="tab-기각"      onclick="filterByTab('기각')"  style="color:#c0392b;">기각 <span style="opacity:0.7;font-size:11px;">3</span></button>
+          <button class="filter-tab"        id="tab-재검증"    onclick="filterByTab('재검증')" style="color:#1a56db;">재검증 <span style="opacity:0.7;font-size:11px;">1</span></button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <select id="playbook-filter" onchange="applyFilters()" style="border:1px solid #c5e1a5; border-radius:8px; padding:6px 12px; font-size:13px; color:#33691e; background:#f1f8e9; font-weight:600;">
+            <option value="all">전체 플레이북</option>
+            <option value="playbook1">playbook1</option>
+            <option value="playbook2">playbook2</option>
+            <option value="playbook3">playbook3</option>
+          </select>
+          <select id="phase-filter" onchange="applyFilters()" style="border:1px solid #ddd; border-radius:8px; padding:6px 12px; font-size:13px; color:#444; background:white;">
+            <option value="all">전체 Phase</option>
+            <option value="Phase 0: 대조군">Phase 0: 대조군</option>
+            <option value="Phase 1: 훅">Phase 1: 훅</option>
+            <option value="Phase 2: 바디">Phase 2: 바디</option>
+            <option value="Phase 3: CTA">Phase 3: CTA</option>
+            <option value="Phase 4: 최종 조합 검증">Phase 4: 최종 조합 검증</option>
+            <option value="Phase 5: 스케일업 + 다음 사이클">Phase 5: 스케일업 + 다음 사이클</option>
+            <option value="기타">기타</option>
+          </select>
+          <select id="metric-filter" onchange="applyFilters()" style="border:1px solid #ddd; border-radius:8px; padding:6px 12px; font-size:13px; color:#444; background:white;">
+            <option value="all">전체 지표</option>
+            <option value="CTR">CTR</option>
+            <option value="CPI">CPI</option>
+            <option value="IPM">IPM</option>
+          </select>
+          <input type="text" id="search-input" oninput="applyFilters()" placeholder="🔍  ID · 가설명 검색" style="border:1px solid #ddd; border-radius:8px; padding:6px 12px; font-size:13px; width:200px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- 테이블 -->
+    <div style="background: white; border-radius: 12px; border: 1px solid #eee; overflow: hidden;">
+
+      <!-- 헤더 -->
+      <div class="table-head-grid">
+        <div>플레이북</div>
+        <div>상태</div>
+        <div>H_ID</div>
+        <div>가설명 <span class="table-hint">행 클릭 시 카드 펼침</span></div>
+        <div>Phase</div>
+        <div>크리에이티브 요소</div>
+        <div>지표</div>
+        <div id="sort-kpi-btn" onclick="cycleSortKpi()" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:4px;">
+          핵심 수치
+          <span id="sort-kpi-icon" style="font-size:11px; color:#aaa;">&#x21C5;</span>
+        </div>
+        <div>사이클</div>
+        <div>액션</div>
+      </div>
+
+      <!-- 행들 -->
+      <div id="table-body">
+
+        <!-- H001 채택 -->
+        <div class="table-row" data-playbook="playbook1" data-status="채택" data-phase="기타" data-id="H001" data-name="스포츠 베팅 콘셉트 소재" data-metric="IPM" data-kpi="15.1">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--adopted"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12l2.5 2.5L16 9"/></svg>채택</span></div>
+          <div class="hid-code">H001</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">스포츠 베팅 콘셉트 소재</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">스포츠 베팅 유저와 슬롯 유저는 도박 행태에 유사한 반응...</div>
+          </div>
+          <div><span class="phase-pill phase-pill--muted">기타</span></div>
+          <div style="font-size:12px; color:#666;">베팅 콘셉트</div>
+          <div><span class="metric-badge">IPM</span></div>
+          <div class="kpi-cell">15.1</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H002 미검증 Phase1 -->
+        <div class="table-row" data-playbook="playbook1" data-status="미검증" data-phase="Phase 1: 훅" data-id="H002" data-name="무료 보상 직접 제시 훅" data-metric="CTR" data-kpi="-1">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--unverified"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>미검증</span></div>
+          <div class="hid-code">H002</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">무료 보상 직접 제시 훅</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">초반 2초 내 무료 보상을 직접 제시하면 대조군 대비 CTR +20%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 1: 훅</span></div>
+          <div style="font-size:12px; color:#666;">무료 보상 제시</div>
+          <div><span class="metric-badge" style="background:#fce4ec;color:#ad1457;">CTR</span></div>
+          <div class="kpi-cell kpi-cell--empty">—</div>
+          <div style="font-size:13px; color:#aaa; text-align:center;">-</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H003 검증중 Phase1 -->
+        <div class="table-row" data-playbook="playbook1" data-status="검증중" data-phase="Phase 1: 훅" data-id="H003" data-name="궁금증 유발 클리프행어 훅" data-metric="CTR" data-kpi="2.35">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--testing"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>검증중</span></div>
+          <div class="hid-code">H003</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">궁금증 유발 (클리프행어) 훅</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">초반 결말 미제시로 궁금증 유발 시 대조군 대비 CTR +20%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 1: 훅</span></div>
+          <div style="font-size:12px; color:#666;">궁금증 유발</div>
+          <div><span class="metric-badge" style="background:#fce4ec;color:#ad1457;">CTR</span></div>
+          <div class="kpi-cell">2.35%</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H004 기각 Phase1 -->
+        <div class="table-row" data-playbook="playbook1" data-status="기각" data-phase="Phase 1: 훅" data-id="H004" data-name="실제 플레이 POV 훅" data-metric="CTR" data-kpi="2.8">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--rejected"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>기각</span></div>
+          <div class="hid-code">H004</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">실제 플레이 POV 훅</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">실제 플레이어 시점 POV 훅이 대조군 대비 CTR +20%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 1: 훅</span></div>
+          <div style="font-size:12px; color:#666;">실제 플레이 POV</div>
+          <div><span class="metric-badge" style="background:#fce4ec;color:#ad1457;">CTR</span></div>
+          <div class="kpi-cell">2.8%</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H005 재검증 Phase1 -->
+        <div class="table-row" data-playbook="playbook1" data-status="재검증" data-phase="Phase 1: 훅" data-id="H005" data-name="UGC 리액션 훅" data-metric="CTR" data-kpi="2.1">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--reverify"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h4M20 20v-5h-4M5 19a9 9 0 0014.3-4M19 5a9 9 0 00-14.3 4"/></svg>재검증</span></div>
+          <div class="hid-code">H005</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">UGC 리액션 훅</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">실제 유저 리액션 UGC 스타일이 대조군 대비 CTR +20%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 1: 훅</span></div>
+          <div style="font-size:12px; color:#666;">UGC 리액션</div>
+          <div><span class="metric-badge" style="background:#fce4ec;color:#ad1457;">CTR</span></div>
+          <div class="kpi-cell">2.1%</div>
+          <div style="font-size:13px; color:#444; text-align:center;">2회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H006 채택 Body -->
+        <div class="table-row" data-playbook="playbook2" data-status="채택" data-phase="Phase 2: 바디" data-id="H006" data-name="동물 vs 사람 소재" data-metric="CPI" data-kpi="3.50">
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="status-pill status-pill--adopted"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12l2.5 2.5L16 9"/></svg>채택</span></div>
+          <div class="hid-code">H006</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">동물 vs 사람 소재</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">동물 캐릭터 중심 소재가 사람 중심 소재보다 CPI -15%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 2: 바디</span></div>
+          <div style="font-size:12px; color:#666;">캐릭터 유형</div>
+          <div><span class="metric-badge" style="background:#e8eaf6;color:#3949ab;">CPI</span></div>
+          <div class="kpi-cell">$3.50</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H007 기각 Body -->
+        <div class="table-row" data-playbook="playbook2" data-status="기각" data-phase="Phase 2: 바디" data-id="H007" data-name="메시지 길이 테스트" data-metric="CPI" data-kpi="4.05">
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="status-pill status-pill--rejected"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>기각</span></div>
+          <div class="hid-code">H007</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">메시지 길이 테스트</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">짧은 메시지가 긴 메시지보다 CPI -15% 달성...</div>
+          </div>
+          <div><span class="phase-pill">Phase 2: 바디</span></div>
+          <div style="font-size:12px; color:#666;">메시지 길이</div>
+          <div><span class="metric-badge" style="background:#e8eaf6;color:#3949ab;">CPI</span></div>
+          <div class="kpi-cell">$4.05</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H008 미검증 -->
+        <div class="table-row" data-playbook="playbook2" data-status="미검증" data-phase="Phase 2: 바디" data-id="H008" data-name="인포머셜 스타일 소재" data-metric="CPI" data-kpi="-1">
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="status-pill status-pill--unverified"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>미검증</span></div>
+          <div class="hid-code">H008</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">인포머셜 스타일 소재</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">쇼핑 채널 방식의 설명형 소재가 CPI -15%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 2: 바디</span></div>
+          <div style="font-size:12px; color:#666;">크리에이티브 스타일</div>
+          <div><span class="metric-badge" style="background:#e8eaf6;color:#3949ab;">CPI</span></div>
+          <div class="kpi-cell kpi-cell--empty">—</div>
+          <div style="font-size:13px; color:#aaa; text-align:center;">-</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H009 미검증 -->
+        <div class="table-row" data-playbook="playbook3" data-status="미검증" data-phase="Phase 1: 훅" data-id="H009" data-name="빅윈 모먼트 훅" data-metric="CTR" data-kpi="-1">
+          <div><span class="playbook-tag playbook-tag--3">playbook3</span></div>
+          <div><span class="status-pill status-pill--unverified"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>미검증</span></div>
+          <div class="hid-code">H009</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">빅윈 모먼트 훅</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">대형 당첨 장면을 훅에 배치 시 대조군 대비 CTR +20%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 1: 훅</span></div>
+          <div style="font-size:12px; color:#666;">빅윈 모먼트</div>
+          <div><span class="metric-badge" style="background:#fce4ec;color:#ad1457;">CTR</span></div>
+          <div class="kpi-cell kpi-cell--empty">—</div>
+          <div style="font-size:13px; color:#aaa; text-align:center;">-</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H010 검증중 -->
+        <div class="table-row" data-playbook="playbook2" data-status="검증중" data-phase="Phase 2: 바디" data-id="H010" data-name="현실적 모델 vs 이상화 모델" data-metric="CPI" data-kpi="3.92">
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="status-pill status-pill--testing"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>검증중</span></div>
+          <div class="hid-code">H010</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">현실적 모델 vs 이상화 모델</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">현실적인 외모의 모델이 이상화된 모델보다 CPI -15%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 2: 바디</span></div>
+          <div style="font-size:12px; color:#666;">모델 유형</div>
+          <div><span class="metric-badge" style="background:#e8eaf6;color:#3949ab;">CPI</span></div>
+          <div class="kpi-cell">$3.92</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H011 기각 -->
+        <div class="table-row" data-playbook="playbook2" data-status="기각" data-phase="기타" data-id="H011" data-name="크로스마케팅 시너지" data-metric="IPM" data-kpi="11.2">
+          <div><span class="playbook-tag playbook-tag--2">playbook2</span></div>
+          <div><span class="status-pill status-pill--rejected"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>기각</span></div>
+          <div class="hid-code">H011</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">크로스마케팅 시너지</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">크로스마케팅 캠페인 연계 소재가 IPM 향상...</div>
+          </div>
+          <div><span class="phase-pill phase-pill--muted">기타</span></div>
+          <div style="font-size:12px; color:#666;">캠페인 유형</div>
+          <div><span class="metric-badge">IPM</span></div>
+          <div class="kpi-cell">11.2</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H012 채택 -->
+        <div class="table-row" data-playbook="playbook1" data-status="채택" data-phase="기타" data-id="H012" data-name="Mature Humor 스타일" data-metric="IPM" data-kpi="17.2">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--adopted"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12l2.5 2.5L16 9"/></svg>채택</span></div>
+          <div class="hid-code">H012</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">Mature Humor 스타일</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">40-60대 타겟 성숙한 유머 요소 소재가 IPM 향상...</div>
+          </div>
+          <div><span class="phase-pill phase-pill--muted">기타</span></div>
+          <div style="font-size:12px; color:#666;">유머 스타일</div>
+          <div><span class="metric-badge">IPM</span></div>
+          <div class="kpi-cell">17.2</div>
+          <div style="font-size:13px; color:#444; text-align:center;">1회</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+        <!-- H013 미검증 -->
+        <div class="table-row" data-playbook="playbook1" data-status="미검증" data-phase="Phase 1: 훅" data-id="H013" data-name="실제 녹화 POV 훅" data-metric="CTR" data-kpi="-1">
+          <div><span class="playbook-tag playbook-tag--1">playbook1</span></div>
+          <div><span class="status-pill status-pill--unverified"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>미검증</span></div>
+          <div class="hid-code">H013</div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#222;">실제 녹화 POV 훅 (재시도)</div>
+            <div style="font-size:12px; color:#aaa; margin-top:2px;">폰 화면 실제 녹화 POV 방식이 연출 POV보다 CTR +20%...</div>
+          </div>
+          <div><span class="phase-pill">Phase 1: 훅</span></div>
+          <div style="font-size:12px; color:#666;">실제 녹화 POV</div>
+          <div><span class="metric-badge" style="background:#fce4ec;color:#ad1457;">CTR</span></div>
+          <div class="kpi-cell kpi-cell--empty">—</div>
+          <div style="font-size:13px; color:#aaa; text-align:center;">-</div>
+          <div class="row-actions-v">
+            <button type="button" onclick="event.stopPropagation(); openHypothesisDetail(this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>자세히</button>
+            <button type="button" class="row-act-secondary" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>편집</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.3;">📭</div>
+        <div style="font-weight:600; color:#888; margin-bottom:4px;" id="empty-label">해당 조건의 가설이 없습니다</div>
+        <div style="font-size: 13px;">필터·검색 조건을 바꿔 보세요</div>
+      </div>
+
+    </div>
+
+    </div><!-- /view-db -->
+
+    <div id="view-performance" class="view-page" style="padding-top: 20px;">
+      <div class="wire-placeholder">
+        <strong>성과 조회</strong>
+        날짜·캠페인·소재 필터와 raw 수치 테이블 영역입니다. 스펙 확정 후 Metrix 필터 바 + 테이블 패턴으로 구현합니다.
+      </div>
+    </div>
+
+    <div id="view-gallery" class="view-page" style="padding-top: 20px;">
+      <div class="wire-placeholder">
+        <strong>소재 갤러리</strong>
+        사내 Dropbox 연동·썸네일 그리드·가설 맥락 메타 표시. 연동 전 플레이스홀더입니다.
+      </div>
+    </div>
+
+  </div><!-- /main-scroll -->
+  </div><!-- /main-area -->
+</div><!-- /app-layout -->
+
+<div id="filter-toast">전체 13개 표시 중</div>
+
+<div class="panel-overlay" id="panel-newHypothesis" onclick="closePanel(event,'newHypothesis')">
+  <div class="side-panel" onclick="event.stopPropagation()">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+      <div>
+        <h2 style="font-size:18px; font-weight:800; color:#222;">새 가설 등록</h2>
+        <p style="font-size:12px; color:#888; margin-top:2px;">테스트 전 가설을 사전 등록합니다</p>
+      </div>
+      <button type="button" onclick="hidePanel('newHypothesis')" style="background:#f0f0f0; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:16px;">×</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">H_ID</label>
+      <input type="text" class="form-input" value="H014" readonly style="background:#f5f5f5; color:#888;">
+      <div style="font-size:11px; color:#aaa; margin-top:4px;">자동 부여</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">플레이북</label>
+      <select class="form-input" id="new-hyp-playbook">
+        <option value="">플레이북을 선택하세요</option>
+        <option value="playbook1">playbook1</option>
+        <option value="playbook2">playbook2</option>
+        <option value="playbook3">playbook3</option>
+      </select>
+      <div style="font-size:11px; color:#aaa; margin-top:4px;">가설이 속한 플레이북 — DB 필터·리포트에 반영</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phase</label>
+      <select class="form-input">
+        <option value="">Phase를 선택하세요</option>
+        <option>Phase 0: 대조군</option>
+        <option>Phase 1: 훅</option>
+        <option>Phase 2: 바디</option>
+        <option>Phase 3: CTA</option>
+        <option>Phase 4: 최종 조합 검증</option>
+        <option>Phase 5: 스케일업 + 다음 사이클</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">크리에이티브 요소</label>
+      <input type="text" class="form-input" placeholder="예: 무료 보상 직접 제시 / 궁금증 유발 / POV">
+    </div>
+    <div class="form-group">
+      <label class="form-label">가설 문장</label>
+      <textarea class="form-input" rows="3" placeholder="예: 초반 2초 내 무료 보상을 직접 제시하면 대조군 대비 CTR +20%를 달성할 것이다" style="resize:vertical;"></textarea>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+      <div>
+        <label class="form-label">테스트 변수</label>
+        <input type="text" class="form-input" placeholder="예: 훅 첫 2초 영상">
+      </div>
+      <div>
+        <label class="form-label">고정 변수</label>
+        <input type="text" class="form-input" placeholder="예: 바디·CTA·타겟팅 동일">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">대조군 소재명</label>
+      <input type="text" class="form-input" placeholder="예: DUC_260326_CTRL_N3A_UA_VID_hor_1920x1080_15s">
+      <div style="font-size:11px; color:#aaa; margin-top:4px;">소재명 그대로 입력 — CSV 자동 매핑에 사용</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+      <div>
+        <label class="form-label">판정 지표</label>
+        <select class="form-input">
+          <option value="">지표 선택</option>
+          <option>CTR (클릭률)</option>
+          <option>CPI (설치당 비용)</option>
+          <option>CVR (전환율)</option>
+          <option>IPM</option>
+          <option>D3 Retention</option>
+          <option>D7 ROAS</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">목표 기준값</label>
+        <input type="text" class="form-input" placeholder="예: +20% / -15%">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">초기 상태</label>
+      <select class="form-input">
+        <option selected>미검증 (기본값)</option>
+        <option>검증중</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:8px;">
+      <button type="button" class="btn-primary" style="flex:1; padding:12px;">가설 등록</button>
+      <button type="button" class="btn-secondary" onclick="hidePanel('newHypothesis')" style="padding:12px 20px;">취소</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel-overlay" id="panel-confluence" onclick="closePanel(event,'confluence')">
+  <div class="side-panel" onclick="event.stopPropagation()">
+    <h2 style="font-size:18px; font-weight:800; color:#222; margin:0 0 16px;">기획안에서 가져오기</h2>
+    <p style="font-size:14px; color:#666;">목업 단계입니다.</p>
+    <button type="button" class="btn-secondary" onclick="hidePanel('confluence')" style="margin-top:20px;">닫기</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-detail" onclick="closeModal(event,'detail')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:640px;">
+    <div style="padding:24px 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
+        <div style="min-width:0;">
+          <span id="modal-detail-hid" style="font-size:13px; font-weight:700; color:#888;">H001</span>
+          <h2 id="modal-detail-title" style="margin:6px 0 0; font-size:18px; font-weight:800; color:#222; line-height:1.35;">가설명</h2>
+        </div>
+        <button type="button" onclick="hideModal('detail')" style="background:#f0f0f0; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; flex-shrink:0;">×</button>
+      </div>
+      <div class="expand-panel" id="modal-detail-summary">
+        <div class="expand-visual-top">
+          <span class="expand-visual-label">가설 문장</span>
+          <p class="expand-visual-refined" id="modal-detail-refined"></p>
+        </div>
+        <div class="expand-visual-columns">
+          <div class="expand-viz-box">
+            <span class="expand-visual-label">핵심 수치</span>
+            <div class="expand-metric-row">
+              <span id="modal-detail-metric-name"></span>
+              <strong id="modal-detail-metric-value"></strong>
+            </div>
+          </div>
+          <div class="expand-viz-box">
+            <span class="expand-visual-label" id="modal-detail-why-label"></span>
+            <p class="expand-viz-text" id="modal-detail-why"></p>
+          </div>
+          <div class="expand-viz-box">
+            <span class="expand-visual-label">다음 시드 가설</span>
+            <p class="expand-viz-text" id="modal-detail-next"></p>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-primary" onclick="hideModal('detail')" style="margin-top:22px;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showView(name) {
+  var idMap = { dashboard: 'view-dashboard', material: 'view-material', db: 'view-db', performance: 'view-performance', gallery: 'view-gallery' };
+  document.querySelectorAll('.view-page').forEach(function (el) { el.classList.remove('is-active'); });
+  var page = document.getElementById(idMap[name]);
+  if (page) page.classList.add('is-active');
+  document.querySelectorAll('.nav-item[data-view]').forEach(function (n) {
+    n.classList.toggle('active', n.getAttribute('data-view') === name);
+  });
+  var titles = {
+    dashboard: ['인사이트 대시보드', '위닝 소재·HOOK/BODY/CTA 분포·핵심 인사이트'],
+    db: ['인사이트 DB', '가설 등록·관리·테스트 이력 축적'],
+    material: ['성과 대시보드', '소재·캠페인 기준 성과 요약 · KPI·차트'],
+    performance: ['성과 조회', '날짜·캠페인·소재 필터 raw 수치'],
+    gallery: ['소재 갤러리', 'Dropbox 연동 · 소재 파일 시각 확인']
+  };
+  var t = titles[name] || titles.dashboard;
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-subtitle').textContent = t[1];
+  var act = document.getElementById('top-bar-actions');
+  if (name === 'db') {
+    act.innerHTML = '<button type="button" class="btn-secondary" onclick="showPanel(\'confluence\')">기획안에서 가져오기</button><button type="button" class="btn-primary" onclick="showPanel(\'newHypothesis\')">+ 새 가설 등록</button>';
+    act.style.display = 'flex';
+  } else {
+    act.innerHTML = '';
+    act.style.display = 'none';
+  }
+}
+
+var activeStatus = 'all';
+
+function filterByKPI(status, cardEl) {
+  activeStatus = status;
+  document.querySelectorAll('.filter-tab').forEach(function (t) { t.classList.remove('active'); });
+  var tab = document.getElementById(status === 'all' ? 'tab-all' : 'tab-' + status);
+  if (tab) tab.classList.add('active');
+  document.querySelectorAll('.kpi-card').forEach(function (c) { c.classList.remove('active-card'); });
+  cardEl.classList.add('active-card');
+  applyFilters();
+}
+
+function filterByTab(status) {
+  activeStatus = status;
+  document.querySelectorAll('.filter-tab').forEach(function (t) { t.classList.remove('active'); });
+  document.getElementById('tab-' + (status === 'all' ? 'all' : status)).classList.add('active');
+  document.querySelectorAll('.kpi-card').forEach(function (c) { c.classList.remove('active-card'); });
+  var k = { all: 'kpi-all', 채택: 'kpi-채택', 검증중: 'kpi-검증중', 미검증: 'kpi-미검증' };
+  if (k[status]) document.getElementById(k[status]).classList.add('active-card');
+  applyFilters();
+}
+
+function expandInsightLabel(status) {
+  if (status === '채택') return '왜 이겼는가';
+  if (status === '기각') return '왜 졌는가';
+  if (status === '재검증') return '재검증 배경';
+  if (status === '검증중') return '중간 관찰';
+  return '검증 전 체크포인트';
+}
+
+var HYP_INLINE_META = {
+  H001: { refined: '스포츠 베팅 콘셉트는 대조군보다 IPM이 20% 높을 것이다.', metricName: 'IPM', metricValue: '15.1', why: '기타/복합 단계 판정 충족.', nextSeed: '훅 1초 구간 A/B.' },
+  H002: { refined: '무료 보상을 직접 제시하는 훅은 대조군보다 CTR이 20% 높을 것이다.', metricName: 'CTR', metricValue: '—', why: '미집행.', nextSeed: '문구 길이 분기.' },
+  H003: { refined: '클리프행어 미결말 훅은 대조군보다 CTR이 20% 높을 것이다.', metricName: 'CTR', metricValue: '2.35%', why: 'P1 1차 지표 집행 중.', nextSeed: '클리프 시점 조정.' },
+  H004: { refined: '실제 플레이 POV 훅은 대조군보다 CTR이 20% 높을 것이다.', metricName: 'CTR', metricValue: '2.8%', why: 'P1 CTR +20% 목표 미달.', nextSeed: '녹화 POV 재시도.' },
+  H005: { refined: 'UGC 리액션 오프닝은 대조군보다 CTR이 20% 높을 것이다.', metricName: 'CTR', metricValue: '2.1%', why: 'P1 사이클 1 미달.', nextSeed: '편집 템포 조정.' },
+  H006: { refined: '동물 캐릭터 중심 바디는 대조군보다 CPI가 15% 낮을 것이다.', metricName: 'CPI', metricValue: '$3.50', why: 'P2 CPI −15% 달성 · D3 정상.', nextSeed: '캐릭터 종류 확장.' },
+  H007: { refined: '메시지 길이를 줄인 바디는 대조군보다 CPI가 15% 낮을 것이다.', metricName: 'CPI', metricValue: '$4.05', why: 'P2 CPI 목표 미달.', nextSeed: '하이브리드 카피.' },
+  H008: { refined: '인포머셜 설명 컷 바디는 대조군보다 CPI가 15% 낮을 것이다.', metricName: 'CPI', metricValue: '—', why: '미집행.', nextSeed: '길이 분기.' },
+  H009: { refined: '빅윈 모먼트 훅은 대조군보다 CTR이 20% 높을 것이다.', metricName: 'CTR', metricValue: '—', why: '미집행.', nextSeed: '수치 표기 방식.' },
+  H010: { refined: '현실 모델 바디는 대조군보다 CPI가 15% 낮을 것이다.', metricName: 'CPI', metricValue: '$3.92', why: 'P2 집행 중.', nextSeed: '연령 세그먼트.' },
+  H011: { refined: '크로스마케팅 조합 소재는 대조군보다 IPM이 20% 높을 것이다.', metricName: 'IPM', metricValue: '11.2', why: '복합/볼륨 기준 미흡.', nextSeed: '단일 메시지 변형.' },
+  H012: { refined: '성숙 유머 바디는 대조군보다 IPM이 20% 높을 것이다.', metricName: 'IPM', metricValue: '17.2', why: '타깃 공감 · 볼륨 지표 우수.', nextSeed: 'P2 연장 컷.' },
+  H013: { refined: '실제 녹화 POV 재시도 훅은 대조군보다 CTR이 20% 높을 것이다.', metricName: 'CTR', metricValue: '—', why: '미집행.', nextSeed: '혼합 컷.' }
+};
+
+function toggleTableGroupExpand(wrap) {
+  var ex = wrap.querySelector('.table-row-expand');
+  if (!ex) return;
+  var open = wrap.classList.toggle('is-open');
+  ex.style.display = open ? 'block' : 'none';
+}
+
+function wrapHypothesisTableRows() {
+  var tb = document.getElementById('table-body');
+  if (!tb || tb.dataset.expandWrapped === '2') return;
+  var rows = Array.prototype.slice.call(tb.querySelectorAll(':scope > .table-row'));
+  rows.forEach(function (row) {
+    var wrap = document.createElement('div');
+    wrap.className = 'table-group';
+    ['playbook', 'status', 'phase', 'id', 'name'].forEach(function (attr) {
+      var v = row.getAttribute('data-' + attr);
+      if (v != null) wrap.setAttribute('data-' + attr, v);
+    });
+    tb.insertBefore(wrap, row);
+    wrap.appendChild(row);
+    row.removeAttribute('data-playbook');
+    row.removeAttribute('data-status');
+    row.removeAttribute('data-phase');
+    row.removeAttribute('data-id');
+    row.removeAttribute('data-name');
+    var id = wrap.getAttribute('data-id') || '';
+    var st = wrap.getAttribute('data-status') || '';
+    var m = HYP_INLINE_META[id] || { refined: '—', metricName: '—', metricValue: '—', why: '—', nextSeed: '—' };
+    var ex = document.createElement('div');
+    ex.className = 'table-row-expand';
+    ex.innerHTML = '<div class="expand-panel"><div class="expand-visual-top"><span class="expand-visual-label">가설 문장</span><p class="expand-visual-refined expand-refined-text"></p></div><div class="expand-visual-columns"><div class="expand-viz-box"><span class="expand-visual-label">핵심 수치</span><div class="expand-metric-row"><span class="expand-metric-name"></span><strong class="expand-metric-value"></strong></div></div><div class="expand-viz-box"><span class="expand-visual-label expand-why-label"></span><p class="expand-viz-text expand-why-text"></p></div><div class="expand-viz-box"><span class="expand-visual-label">다음 시드 가설</span><p class="expand-viz-text expand-next-text"></p></div></div></div>';
+    ex.querySelector('.expand-refined-text').textContent = m.refined;
+    ex.querySelector('.expand-metric-name').textContent = m.metricName;
+    ex.querySelector('.expand-metric-value').textContent = m.metricValue;
+    ex.querySelector('.expand-why-label').textContent = expandInsightLabel(st);
+    ex.querySelector('.expand-why-text').textContent = m.why;
+    ex.querySelector('.expand-next-text').textContent = m.nextSeed;
+    wrap.appendChild(ex);
+    var cells = row.querySelectorAll(':scope > div');
+    var hypCell = cells[3];
+    if (hypCell) {
+      hypCell.classList.add('hyp-cell');
+      var chev = document.createElement('span');
+      chev.className = 'row-chevron';
+      chev.setAttribute('aria-hidden', 'true');
+      chev.textContent = '▸';
+      hypCell.insertBefore(chev, hypCell.firstChild);
+    }
+    row.addEventListener('click', function (e) {
+      if (e.target.closest('button')) return;
+      toggleTableGroupExpand(wrap);
+    });
+  });
+  tb.dataset.expandWrapped = '2';
+}
+
+function applyFilters() {
+  var phase = document.getElementById('phase-filter').value;
+  var playbookEl = document.getElementById('playbook-filter');
+  var playbook = playbookEl ? playbookEl.value : 'all';
+  var search = document.getElementById('search-input').value.trim().toLowerCase();
+  var metricEl = document.getElementById('metric-filter');
+  var metric = metricEl ? metricEl.value : 'all';
+  var groups = document.querySelectorAll('#table-body .table-group');
+  var visible = 0;
+  groups.forEach(function (group) {
+    var rowStatus = group.dataset.status;
+    var rowPhase = group.dataset.phase;
+    var rowPb = group.dataset.playbook || '';
+    var rowId = (group.dataset.id || '').toLowerCase();
+    var rowName = (group.dataset.name || '').toLowerCase();
+    var rowMetric = group.dataset.metric || '';
+    var statusOk = activeStatus === 'all' || rowStatus === activeStatus;
+    var phaseOk = phase === 'all' || rowPhase === phase;
+    var playbookOk = playbook === 'all' || rowPb === playbook;
+    var searchOk = !search || rowId.includes(search) || rowName.includes(search);
+    var metricOk = metric === 'all' || rowMetric === metric;
+    if (statusOk && phaseOk && playbookOk && searchOk && metricOk) {
+      group.style.display = '';
+      visible++;
+    } else {
+      group.style.display = 'none';
+      group.classList.remove('is-open');
+      var ex = group.querySelector('.table-row-expand');
+      if (ex) ex.style.display = 'none';
+    }
+  });
+  document.getElementById('empty-state').style.display = visible === 0 ? 'block' : 'none';
+}
+
+var kpiSortDir = 0; // 0=none 1=asc -1=desc
+function cycleSortKpi() {
+  kpiSortDir = kpiSortDir === 0 ? 1 : kpiSortDir === 1 ? -1 : 0;
+  var icon = document.getElementById('sort-kpi-icon');
+  if (kpiSortDir === 1)  icon.innerHTML = '&#x2191;'; // 오름차순
+  else if (kpiSortDir === -1) icon.innerHTML = '&#x2193;'; // 내림차순
+  else icon.innerHTML = '&#x21C5;'; // 정렬 없음
+  var btn = document.getElementById('sort-kpi-btn');
+  btn.style.color = kpiSortDir !== 0 ? '#1a6b2d' : '';
+  var tb = document.getElementById('table-body');
+  var groups = Array.prototype.slice.call(tb.querySelectorAll(':scope > .table-group'));
+  if (kpiSortDir === 0) {
+    // 원래 순서로 복원 (H-ID 기준)
+    groups.sort(function(a,b){
+      return (a.dataset.id||'').localeCompare(b.dataset.id||'');
+    });
+  } else {
+    groups.sort(function(a,b){
+      var av = parseFloat(a.dataset.kpi); var bv = parseFloat(b.dataset.kpi);
+      var aVal = isNaN(av) || av < 0 ? (kpiSortDir === 1 ? Infinity : -Infinity) : av;
+      var bVal = isNaN(bv) || bv < 0 ? (kpiSortDir === 1 ? Infinity : -Infinity) : bv;
+      return kpiSortDir * (aVal - bVal);
+    });
+  }
+  groups.forEach(function(g){ tb.appendChild(g); });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('filter-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function () { t.classList.remove('show'); }, 1800);
+}
+
+function showPanel(name) { document.getElementById('panel-' + name).classList.add('show'); }
+function hidePanel(name) { document.getElementById('panel-' + name).classList.remove('show'); }
+function closePanel(e, name) { if (e.target === document.getElementById('panel-' + name)) hidePanel(name); }
+function showModal(name) { document.getElementById('modal-' + name).classList.add('show'); }
+function hideModal(name) { document.getElementById('modal-' + name).classList.remove('show'); }
+function closeModal(e, name) { if (e.target === document.getElementById('modal-' + name)) hideModal(name); }
+
+function openHypothesisDetail(btn) {
+  var group = btn && btn.closest ? btn.closest('.table-group') : null;
+  var id = (group && group.dataset.id) ? group.dataset.id : 'H001';
+  var st = (group && group.dataset.status) ? group.dataset.status : '';
+  var name = (group && group.dataset.name) ? group.dataset.name : '가설';
+  var m = HYP_INLINE_META[id] || { refined: '—', metricName: '—', metricValue: '—', why: '—', nextSeed: '—' };
+  document.getElementById('modal-detail-hid').textContent = id;
+  document.getElementById('modal-detail-title').textContent = name;
+  document.getElementById('modal-detail-refined').textContent = m.refined;
+  document.getElementById('modal-detail-metric-name').textContent = m.metricName;
+  document.getElementById('modal-detail-metric-value').textContent = m.metricValue;
+  document.getElementById('modal-detail-why-label').textContent = expandInsightLabel(st);
+  document.getElementById('modal-detail-why').textContent = m.why;
+  document.getElementById('modal-detail-next').textContent = m.nextSeed;
+  showModal('detail');
+}
+
+wrapHypothesisTableRows();
+</script>
+</body>
+</html>

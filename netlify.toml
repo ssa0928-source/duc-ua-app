@@ -1,11 +1,9 @@
-# Netlify: 동일 사이트에 계속 배포하면 URL이 바뀌지 않습니다.
-# https://app.netlify.com → 한 번 만든 사이트에만 연결하세요.
-
+# 정적 HTML 배포 — 빌드 불필요
 [build]
-  command = "npm run build"
+  command = "echo 'Static deploy'"
   publish = "dist"
 
-# SPA 라우팅 (public/_redirects 와 동일 역할, 이중 안전)
+# SPA 라우팅
 [[redirects]]
   from = "/*"
   to = "/index.html"
